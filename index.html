@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love Tickets</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Animations */
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+        .animate-slide-up { animation: slide-up 0.4s ease-out; }
+        body { background-color: #0f172a; color: #f1f5f9; font-family: sans-serif; }
+    </style>
+</head>
+<body class="selection:bg-pink-500 selection:text-white pb-20">
+
+    <div id="app" class="min-h-screen relative overflow-hidden">
+        
+        <!-- Loading Indicator -->
+        <div id="loading-overlay" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center hidden">
+            <div class="animate-pulse text-pink-500 font-bold">Syncing...</div>
+        </div>
+
+        <!-- LOGIN SCREEN -->
+        <div id="login-view" class="flex flex-col items-center justify-center min-h-screen p-6 text-center relative z-10">
+            <!-- Background Blobs -->
+            <div class="absolute top-10 left-10 w-64 h-64 bg-purple-600/20 rounded-full blur-[100px] -z-10"></div>
+            <div class="absolute bottom-10 right-10 w-64 h-64 bg-pink-600/20 rounded-full blur-[100px] -z-10"></div>
+
+            <div class="mb-6 relative">
+                <div class="bg-gradient-to-tr from-pink-500 to-purple-600 p-4 rounded-2xl shadow-2xl shadow-pink-500/20 transform rotate-3 mx-auto w-fit">
+                    <i data-lucide="heart" class="w-8 h-8 text-white fill-white"></i>
+                </div>
+            </div>
+            
+            <h1 class="text-3xl font-black text-white mb-2 tracking-tight">Love Tickets</h1>
+            <p class="text-slate-400 mb-8 max-w-xs text-sm">Select your identity to enter.</p>
+
+            <div id="login-error" class="hidden bg-red-500/10 border border-red-500/20 p-3 rounded-lg text-red-400 text-xs mb-4 flex items-center gap-2">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i> <span id="error-msg"></span>
+            </div>
+
+            <div class="w-full max-w-xs space-y-4">
+                <!-- Role Selection -->
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="selectRole('creator')" id="btn-role-creator" class="role-btn p-4 rounded-2xl border-2 transition-all text-xs font-bold flex flex-col items-center gap-3 relative overflow-hidden group bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700 hover:bg-slate-800">
+                        <i data-lucide="sparkles" class="w-8 h-8 mb-1"></i>
+                        <span class="uppercase tracking-wide">Girlfriend</span>
+                    </button>
+
+                    <button onclick="selectRole('user')" id="btn-role-user" class="role-btn p-4 rounded-2xl border-2 transition-all text-xs font-bold flex flex-col items-center gap-3 relative overflow-hidden group bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700 hover:bg-slate-800">
+                        <i data-lucide="user" class="w-8 h-8 mb-1"></i>
+                        <span class="uppercase tracking-wide">Boyfriend</span>
+                    </button>
+                </div>
+
+                <!-- PIN Entry -->
+                <div id="pin-section" class="hidden animate-slide-up pt-2">
+                    <div class="text-center mb-2">
+                        <label id="pin-label" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Enter PIN</label>
+                    </div>
+                    <div class="relative">
+                        <input type="password" id="pin-input" placeholder="PIN (Default: 123)" class="w-full bg-slate-900 border border-white/10 rounded-xl p-4 text-center text-white font-bold tracking-[0.5em] text-lg focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500/50 transition-all placeholder:tracking-normal placeholder:font-normal placeholder:text-sm placeholder:text-slate-700">
+                    </div>
+                    <button onclick="attemptLogin()" class="w-full mt-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all hover:shadow-pink-500/25">
+                        Unlock Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD SCREEN -->
+        <div id="dashboard-view" class="hidden">
+            <!-- Header -->
+            <header class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-white/10 p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="bg-gradient-to-tr from-pink-500 to-purple-600 p-2 rounded-lg">
+                        <i data-lucide="ticket" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Love Tickets</h1>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="toggleSettings(true)" class="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="logout()" class="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main class="p-4 max-w-md mx-auto space-y-6">
+                <!-- Creator Controls -->
+                <div id="creator-controls" class="hidden bg-gradient-to-r from-slate-800 to-slate-800/50 p-6 rounded-2xl border border-white/5 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-pink-500/20 rounded-full blur-2xl"></div>
+                    <h2 class="text-lg font-semibold mb-2">Creator Dashboard</h2>
+                    <p class="text-slate-400 text-sm mb-4">Create new tickets for him to use.</p>
+                    <button onclick="toggleCreateModal(true)" class="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 active:scale-95 transition-transform text-white">
+                        <i data-lucide="plus" class="w-5 h-5"></i> Create New Ticket
+                    </button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex gap-4 p-1 bg-white/5 rounded-xl">
+                    <button onclick="switchTab('wallet')" id="tab-wallet" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all bg-slate-700 text-white shadow-sm">
+                        Wallet (<span id="wallet-count">0</span>)
+                    </button>
+                    <button onclick="switchTab('history')" id="tab-history" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-400 hover:text-white">
+                        History
+                    </button>
+                </div>
+
+                <!-- Ticket Grid -->
+                <div id="ticket-list" class="space-y-4 pb-20">
+                    <!-- Tickets injected here via JS -->
+                </div>
+            </main>
+        </div>
+
+        <!-- CREATE MODAL -->
+        <div id="create-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+            <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                    <h3 class="font-bold text-lg">Create New Ticket</h3>
+                    <button onclick="toggleCreateModal(false)" class="p-1 hover:bg-white/10 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="p-4 overflow-y-auto">
+                    <div class="mb-6">
+                        <label class="text-xs font-bold text-slate-400 uppercase mb-3 block">Choose Category</label>
+                        <div id="category-grid" class="grid grid-cols-2 gap-2">
+                            <!-- Categories injected here -->
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div id="custom-title-group" class="hidden">
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-1 block">Title</label>
+                            <input type="text" id="create-title" placeholder="e.g. Breakfast in Bed" class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:border-pink-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-1 block">Description / Rules</label>
+                            <textarea id="create-desc" rows="3" placeholder="What does this ticket grant him?" class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white focus:border-pink-500 focus:outline-none resize-none"></textarea>
+                        </div>
+                        <button onclick="submitNewTicket()" class="w-full py-4 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl font-bold text-white shadow-lg shadow-pink-500/25 active:scale-95 transition-transform">Mint Ticket</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS MODAL -->
+        <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+            <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-xs p-6 relative">
+                <button onclick="toggleSettings(false)" class="absolute top-4 right-4 text-slate-500 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+                <h3 class="text-lg font-bold mb-4">Settings</h3>
+                
+                <div class="mb-6">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Notifications</label>
+                    <button onclick="requestNotificationPermission()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-white/5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all text-white">
+                        <i data-lucide="bell" class="w-4 h-4 text-pink-400"></i> Enable Notifications
+                    </button>
+                    <p class="text-[10px] text-slate-500 mt-2 text-center">Keep tab open for updates.</p>
+                </div>
+
+                <div class="border-t border-white/10 pt-4">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Security</label>
+                    <p id="settings-role-text" class="text-slate-400 text-xs mb-3">Change PIN</p>
+                    <input type="text" id="new-pin-input" class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-white mb-3 focus:border-pink-500 focus:outline-none" placeholder="Enter new PIN">
+                    <button onclick="updatePin()" class="w-full py-2 bg-pink-600 hover:bg-pink-500 rounded-lg text-sm font-bold text-white transition-colors">Update PIN</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CELEBRATION OVERLAY -->
+        <div id="celebration-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden animate-fade-in">
+            <div class="bg-slate-900 border border-pink-500/50 p-8 rounded-3xl max-w-sm w-full text-center relative overflow-hidden shadow-2xl shadow-pink-500/30">
+                <div class="absolute inset-0 bg-gradient-to-b from-pink-500/10 to-transparent"></div>
+                <i data-lucide="sparkles" class="w-16 h-16 text-pink-400 mx-auto mb-4 animate-bounce"></i>
+                <h2 class="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-2">Redeemed!</h2>
+                <p class="text-slate-300 mb-6">You have used: <br/><span id="celebration-title" class="font-semibold text-white text-lg"></span></p>
+                <div class="text-xs text-slate-500 uppercase tracking-widest">Enjoy your time</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MAIN SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        // --- CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDnKHTghSxW7fi6bp_UGBhR6Nx4paAtO4U",
+            authDomain: "my-babys-place.firebaseapp.com",
+            projectId: "my-babys-place",
+            storageBucket: "my-babys-place.firebasestorage.app",
+            messagingSenderId: "276027805309",
+            appId: "1:276027805309:web:7997b78ccf2c5004126b14",
+            measurementId: "G-SX1LQK3CD8"
+        };
+
+        // Initialize
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // GLOBAL AUTH PROMISE (Enhanced Error Handling)
+        window.authPromise = signInAnonymously(auth).catch(error => {
+            if (error.code === 'auth/configuration-not-found' || error.code === 'auth/admin-restricted-operation') {
+                console.warn("%c⚠️ Auth Warning: Anonymous authentication is not enabled in the Firebase Console.", "color: orange; font-weight: bold; font-size: 14px;");
+                console.warn("Please go to Firebase Console > Authentication > Sign-in method > Enable Anonymous.");
+                // We resolve with null to allow the app to attempt Firestore access (works if rules are open)
+                return null;
+            }
+            console.error("Auth Error:", error);
+        });
+
+        const ROOM_ID = "our_private_room";
+        
+        // --- DATA & STATE ---
+        const CATEGORIES = [
+            { id: 'boobie', label: 'Boobie Ticket', icon: '🍒', color: 'from-pink-500 to-rose-500' },
+            { id: 'ass', label: 'Ass Ticket', icon: '🍑', color: 'from-orange-400 to-red-500' },
+            { id: 'pussy', label: 'Pussy Ticket', icon: '🐱', color: 'from-purple-500 to-indigo-500' },
+            { id: 'fullbody', label: 'Full Body Ticket', icon: '🔥', color: 'from-red-500 to-pink-600' },
+            { id: '1hour', label: '1 Hour Ticket', icon: '⏳', color: 'from-blue-400 to-cyan-500' },
+            { id: 'nightshow', label: 'Night Show', icon: '🌙', color: 'from-indigo-600 to-purple-800' },
+            { id: 'custom', label: 'Custom Wish', icon: '✨', color: 'from-emerald-400 to-teal-600' },
+        ];
+
+        let state = {
+            userMode: null, // 'creator' | 'user'
+            tickets: [],
+            activeTab: 'wallet',
+            selectedCategory: CATEGORIES[0],
+            prevTickets: []
+        };
+
+        // --- UI UPDATERS ---
+        
+        // Setup initial icons
+        lucide.createIcons();
+
+        window.selectRole = (role) => {
+            state.userMode = role;
+            
+            // UI Toggle
+            const creatorBtn = document.getElementById('btn-role-creator');
+            const userBtn = document.getElementById('btn-role-user');
+            const pinSection = document.getElementById('pin-section');
+            const pinLabel = document.getElementById('pin-label');
+
+            // Reset styles
+            [creatorBtn, userBtn].forEach(btn => {
+                btn.className = "role-btn p-4 rounded-2xl border-2 transition-all text-xs font-bold flex flex-col items-center gap-3 relative overflow-hidden group bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700 hover:bg-slate-800";
+            });
+
+            // Active Style
+            const activeClass = role === 'creator' 
+                ? 'bg-pink-500/10 border-pink-500 text-pink-400 shadow-[0_0_20px_rgba(236,72,153,0.3)]' 
+                : 'bg-blue-500/10 border-blue-500 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.3)]';
+            
+            document.getElementById(`btn-role-${role}`).className = `role-btn p-4 rounded-2xl border-2 transition-all text-xs font-bold flex flex-col items-center gap-3 relative overflow-hidden group ${activeClass}`;
+            
+            // Show PIN
+            pinLabel.innerText = `Enter PIN for ${role === 'creator' ? 'Her' : 'Him'}`;
+            pinSection.classList.remove('hidden');
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-input').focus();
+        };
+
+        window.attemptLogin = async () => {
+            const pin = document.getElementById('pin-input').value;
+            const errorDiv = document.getElementById('login-error');
+            const errorMsg = document.getElementById('error-msg');
+            const loading = document.getElementById('loading-overlay');
+
+            if(!state.userMode || !pin) return;
+
+            loading.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+            
+            // WAIT FOR AUTH to settle (even if it failed)
+            if(window.authPromise) {
+                await window.authPromise;
+            }
+
+            const docRef = doc(db, "love_wallets", ROOM_ID);
+            
+            try {
+                const docSnap = await getDoc(docRef);
+                
+                if (!docSnap.exists()) {
+                    // Initialize Room
+                    if (pin !== '123') {
+                        throw new Error("New room! Use default PIN: 123");
+                    }
+                    await setDoc(docRef, { 
+                        tickets: [], 
+                        created: Date.now(),
+                        gfPin: '123',
+                        bfPin: '123'
+                    });
+                    enterDashboard();
+                } else {
+                    const data = docSnap.data();
+                    const storedPin = state.userMode === 'creator' ? (data.gfPin || '123') : (data.bfPin || '123');
+                    
+                    if (pin === storedPin) {
+                        enterDashboard();
+                    } else {
+                        throw new Error("Incorrect PIN");
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                let message = err.message || "Connection failed";
+                // Friendly error for permission issues
+                if (err.code === 'permission-denied') {
+                    message = "Access Denied: Enable Anonymous Auth in Firebase Console or check rules.";
+                }
+                errorMsg.innerText = message;
+                errorDiv.classList.remove('hidden');
+                loading.classList.add('hidden');
+            }
+        };
+
+        function enterDashboard() {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            document.getElementById('loading-overlay').classList.add('hidden');
+
+            // Show Creator Controls?
+            if(state.userMode === 'creator') {
+                document.getElementById('creator-controls').classList.remove('hidden');
+            }
+
+            setupRealtimeListener();
+        }
+
+        function setupRealtimeListener() {
+            const docRef = doc(db, "love_wallets", ROOM_ID);
+            
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data().tickets || [];
+                    state.tickets = data.sort((a, b) => b.timestamp - a.timestamp);
+                    renderTickets();
+                    checkNotifications();
+                }
+            });
+        }
+
+        window.switchTab = (tab) => {
+            state.activeTab = tab;
+            
+            const btnWallet = document.getElementById('tab-wallet');
+            const btnHistory = document.getElementById('tab-history');
+            
+            if(tab === 'wallet') {
+                btnWallet.className = "flex-1 py-2 text-sm font-medium rounded-lg transition-all bg-slate-700 text-white shadow-sm";
+                btnHistory.className = "flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-400 hover:text-white";
+            } else {
+                btnHistory.className = "flex-1 py-2 text-sm font-medium rounded-lg transition-all bg-slate-700 text-white shadow-sm";
+                btnWallet.className = "flex-1 py-2 text-sm font-medium rounded-lg transition-all text-slate-400 hover:text-white";
+            }
+            renderTickets();
+        };
+
+        function renderTickets() {
+            const container = document.getElementById('ticket-list');
+            const availableCount = state.tickets.filter(t => t.status === 'available').length;
+            document.getElementById('wallet-count').innerText = availableCount;
+
+            container.innerHTML = '';
+
+            const filtered = state.tickets.filter(t => 
+                state.activeTab === 'wallet' ? t.status === 'available' : t.status === 'used'
+            );
+
+            if(filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 opacity-50">
+                        <i data-lucide="ticket" class="w-12 h-12 mx-auto mb-3 text-slate-600"></i>
+                        <p>No tickets found in ${state.activeTab}</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            filtered.forEach(ticket => {
+                const category = CATEGORIES.find(c => c.id === ticket.type) || CATEGORIES[6];
+                const isUsed = ticket.status === 'used';
+                const dateStr = ticket.usedAt ? new Date(ticket.usedAt).toLocaleDateString() : '';
+
+                const card = document.createElement('div');
+                card.className = `relative group ${isUsed ? 'opacity-60 grayscale' : ''}`;
+                
+                let actionButton = '';
+                if(state.userMode === 'user' && !isUsed) {
+                    actionButton = `
+                        <div class="mt-4 pl-3">
+                            <button onclick="redeemTicket('${ticket.id}')" class="w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-gradient-to-r ${category.color} text-white shadow-lg hover:opacity-90 active:scale-[0.98] transition-all">
+                                <i data-lucide="ticket" class="w-4 h-4"></i> Redeem Ticket
+                            </button>
+                        </div>
+                    `;
+                }
+
+                let deleteButton = '';
+                if(state.userMode === 'creator') {
+                    deleteButton = `<button onclick="deleteTicket('${ticket.id}')" class="p-2 ml-2 text-slate-600 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+                }
+
+                let usedBadge = isUsed ? `
+                    <div class="ml-2 px-3 py-1 bg-slate-800 rounded-full border border-slate-700 whitespace-nowrap">
+                        <span class="text-xs font-bold text-slate-500">USED</span>
+                    </div>
+                    <p class="absolute bottom-4 right-4 text-slate-600 text-xs flex items-center gap-1">Used on ${dateStr}</p>
+                ` : '';
+
+                card.innerHTML = `
+                    <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 shadow-xl transition-all">
+                        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${category.color} ${isUsed ? 'opacity-30' : ''}"></div>
+                        <div class="flex justify-between items-start pl-3">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-2xl">${category.icon}</span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-slate-300 border border-white/5">${category.label}</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-white leading-tight">${ticket.title}</h3>
+                                <p class="text-slate-400 text-sm mt-1">${ticket.description}</p>
+                            </div>
+                            ${deleteButton}
+                            ${!state.userMode === 'creator' && isUsed ? usedBadge : ''}
+                        </div>
+                        ${actionButton}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // --- ACTIONS ---
+
+        window.redeemTicket = async (id) => {
+            const ticket = state.tickets.find(t => t.id === id);
+            if (!ticket) return;
+
+            // Show Celebration
+            const overlay = document.getElementById('celebration-overlay');
+            document.getElementById('celebration-title').innerText = ticket.title;
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.add('hidden'), 3000);
+
+            try {
+                const docRef = doc(db, "love_wallets", ROOM_ID);
+                // We must update the whole array in Firestore because it's an object array
+                // Optimistically we assume sync will handle UI, but we can update local state immediately if we want
+                const updatedTickets = state.tickets.map(t => 
+                    t.id === id ? { ...t, status: 'used', usedAt: Date.now() } : t
+                );
+                await updateDoc(docRef, { tickets: updatedTickets });
+            } catch (err) {
+                console.error(err);
+                alert("Failed to redeem");
+            }
+        };
+
+        window.deleteTicket = async (id) => {
+            if(!confirm("Delete this ticket?")) return;
+            const updatedTickets = state.tickets.filter(t => t.id !== id);
+            const docRef = doc(db, "love_wallets", ROOM_ID);
+            await updateDoc(docRef, { tickets: updatedTickets });
+        };
+
+        // --- CREATION MODAL ---
+
+        window.toggleCreateModal = (show) => {
+            const modal = document.getElementById('create-modal');
+            if(show) {
+                renderCategories();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        };
+
+        function renderCategories() {
+            const grid = document.getElementById('category-grid');
+            grid.innerHTML = '';
+            CATEGORIES.forEach(cat => {
+                const isSelected = state.selectedCategory.id === cat.id;
+                const btn = document.createElement('button');
+                btn.className = `flex items-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all text-left ${isSelected ? 'bg-slate-800 border-pink-500 text-white shadow-lg' : 'bg-slate-800/50 border-transparent hover:bg-slate-800 text-slate-400'}`;
+                btn.innerHTML = `<span>${cat.icon}</span><span>${cat.label}</span>`;
+                btn.onclick = () => {
+                    state.selectedCategory = cat;
+                    renderCategories();
+                    document.getElementById('custom-title-group').className = cat.id === 'custom' ? 'block' : 'hidden';
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        window.submitNewTicket = async () => {
+            const cat = state.selectedCategory;
+            const titleInput = document.getElementById('create-title').value;
+            const descInput = document.getElementById('create-desc').value;
+
+            const newTicket = {
+                id: crypto.randomUUID(),
+                type: cat.id,
+                title: cat.id === 'custom' ? titleInput : cat.label,
+                description: descInput || 'No rules, just love.',
+                status: 'available',
+                timestamp: Date.now()
+            };
+
+            window.toggleCreateModal(false);
+
+            try {
+                const docRef = doc(db, "love_wallets", ROOM_ID);
+                await updateDoc(docRef, {
+                    tickets: arrayUnion(newTicket)
+                });
+            } catch (err) {
+                console.error(err);
+                alert("Failed to create ticket");
+            }
+        };
+
+        // --- SETTINGS ---
+
+        window.toggleSettings = (show) => {
+            const modal = document.getElementById('settings-modal');
+            const roleText = document.getElementById('settings-role-text');
+            if(show) {
+                roleText.innerText = `Change PIN for ${state.userMode === 'creator' ? 'Girlfriend' : 'Boyfriend'}`;
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        };
+
+        window.logout = () => {
+            location.reload();
+        };
+
+        window.updatePin = async () => {
+            const newPin = document.getElementById('new-pin-input').value;
+            if(!newPin) return;
+            
+            try {
+                const docRef = doc(db, "love_wallets", ROOM_ID);
+                const field = state.userMode === 'creator' ? 'gfPin' : 'bfPin';
+                await updateDoc(docRef, { [field]: newPin });
+                alert("PIN updated!");
+                toggleSettings(false);
+            } catch(err) {
+                alert("Error updating PIN");
+            }
+        };
+
+        // --- NOTIFICATIONS ---
+        
+        window.requestNotificationPermission = async () => {
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notifications");
+                return;
+            }
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+                new Notification("Notifications Enabled", { body: "You will now be notified of updates!" });
+            }
+        };
+
+        function checkNotifications() {
+            if (state.prevTickets.length === 0) {
+                state.prevTickets = state.tickets;
+                return;
+            }
+
+            // 1. Notify Boyfriend (User) on NEW ticket
+            if (state.userMode === 'user') {
+                const newTickets = state.tickets.filter(t => !state.prevTickets.find(p => p.id === t.id));
+                newTickets.forEach(t => {
+                    if (Notification.permission === "granted") {
+                         new Notification("New Love Ticket! 🎟️", { 
+                            body: `She sent you: ${t.title}`,
+                            icon: "https://cdn-icons-png.flaticon.com/512/2589/2589175.png" 
+                         });
+                    }
+                });
+            }
+
+            // 2. Notify Girlfriend (Creator) on REDEEMED ticket
+            if (state.userMode === 'creator') {
+                const usedTickets = state.tickets.filter(t => t.status === 'used' && state.prevTickets.find(p => p.id === t.id && p.status === 'available'));
+                usedTickets.forEach(t => {
+                    if (Notification.permission === "granted") {
+                         new Notification("Ticket Redeemed! ✨", { 
+                            body: `He used: ${t.title}`,
+                            icon: "https://cdn-icons-png.flaticon.com/512/2589/2589175.png"
+                         });
+                    }
+                });
+            }
+
+            state.prevTickets = state.tickets;
+        }
+
+    </script>
+</body>
+</html>
