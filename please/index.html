@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Ticket Petition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti for the success screen -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @keyframes tear-drop {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(50px) scale(0.5); opacity: 0; }
+        }
+        .tear { animation: tear-drop 1.5s infinite; }
+        
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow: hidden; /* Keep the running button on screen */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 relative">
+
+    <!-- Ambient background -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px]"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px]"></div>
+    </div>
+
+    <!-- MAIN PLEA CARD -->
+    <div id="plea-card" class="bg-slate-800/80 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center relative z-10 transition-all duration-500">
+        
+        <div class="text-6xl mb-4 relative inline-block">
+            🥺
+            <div class="tear absolute bottom-0 left-2 text-2xl text-blue-400">💧</div>
+            <div class="tear absolute bottom-0 right-2 text-2xl text-blue-400" style="animation-delay: 0.5s">💧</div>
+        </div>
+
+        <h1 class="text-2xl font-black mb-2 text-white">Emergency Petition</h1>
+        
+        <div class="bg-slate-900/50 rounded-xl p-4 mb-6 border border-slate-700/50 text-left">
+            <p class="text-slate-300 text-sm leading-relaxed mb-3">
+                <span class="font-bold text-pink-400">To the love of my life,</span><br><br>
+                It has come to my attention that my Love Ticket wallet is severely empty. I am currently experiencing extreme withdrawal symptoms.
+            </p>
+            <ul class="text-xs text-slate-400 space-y-2 mb-3">
+                <li class="flex items-center gap-2"><span>💔</span> Heart status: Sad and neglected</li>
+                <li class="flex items-center gap-2"><span>📉</span> Ticket Balance: Dangerously low</li>
+                <li class="flex items-center gap-2"><span>🩺</span> Doctor's orders: Needs immediate attention</li>
+            </ul>
+            <p class="text-slate-300 text-sm font-medium italic text-center">
+                Please find it in your heart to open the Creator Dashboard and mint a little joy.
+            </p>
+        </div>
+
+        <div class="relative h-32 w-full mt-4">
+            <!-- YES BUTTON -->
+            <button onclick="acceptPlea()" class="absolute left-1/2 -translate-x-1/2 top-0 w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl font-bold text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] animate-pulse hover:scale-105 transition-transform z-20">
+                Fine, I'll give you tickets 🙄💖
+            </button>
+
+            <!-- NO BUTTON (The evasive one) -->
+            <button id="no-btn" class="absolute left-1/2 -translate-x-1/2 top-20 px-6 py-2 bg-slate-700 text-slate-400 rounded-lg text-sm font-medium transition-all duration-200 z-30">
+                No tickets for you 🛑
+            </button>
+        </div>
+    </div>
+
+    <!-- SUCCESS SCREEN (Hidden initially) -->
+    <div id="success-card" class="hidden bg-slate-800/80 backdrop-blur-xl border border-pink-500/30 p-8 rounded-3xl shadow-[0_0_40px_rgba(236,72,153,0.2)] max-w-md w-full text-center relative z-10 transition-all duration-500 scale-95 opacity-0">
+        <div class="text-6xl mb-4 animate-bounce">🥰</div>
+        <h1 class="text-3xl font-black mb-2 bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">YAY! Best Girlfriend Ever!</h1>
+        <p class="text-slate-300 text-sm mb-6">
+            My heart is full and my wallet is ready.<br>Please proceed to the Love Tickets app immediately to deposit my well-deserved treats.
+        </p>
+        <p class="text-xs font-mono text-pink-400 bg-pink-500/10 py-2 px-4 rounded-lg inline-block">
+            Status: Waiting patiently like a good boy 🐶
+        </p>
+    </div>
+
+    <script>
+        const noBtn = document.getElementById('no-btn');
+        const pleaCard = document.getElementById('plea-card');
+        const successCard = document.getElementById('success-card');
+
+        // Make the NO button run away
+        function moveNoButton() {
+            // Get viewport dimensions
+            const maxX = window.innerWidth - noBtn.offsetWidth - 40;
+            const maxY = window.innerHeight - noBtn.offsetHeight - 40;
+
+            // Generate random coordinates
+            const randomX = Math.max(20, Math.floor(Math.random() * maxX));
+            const randomY = Math.max(20, Math.floor(Math.random() * maxY));
+
+            // Apply fixed positioning so it escapes the relative container
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = `${randomX}px`;
+            noBtn.style.top = `${randomY}px`;
+            noBtn.style.transform = 'none'; // Remove the center translation
+        }
+
+        // Trigger evasion on mouse hover (desktop) or touch (mobile)
+        noBtn.addEventListener('mouseover', moveNoButton);
+        noBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent actual click
+            moveNoButton();
+        });
+
+        // When she finally clicks YES
+        function acceptPlea() {
+            // Hide plea card
+            pleaCard.style.opacity = '0';
+            pleaCard.style.transform = 'scale(0.9)';
+            
+            setTimeout(() => {
+                pleaCard.classList.add('hidden');
+                
+                // Show success card
+                successCard.classList.remove('hidden');
+                // Trigger reflow
+                void successCard.offsetWidth;
+                
+                successCard.style.opacity = '1';
+                successCard.style.transform = 'scale(1)';
+
+                // Fire Confetti!
+                fireConfetti();
+            }, 300);
+        }
+
+        function fireConfetti() {
+            const count = 200;
+            const defaults = {
+                origin: { y: 0.7 }
+            };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio)
+                }));
+            }
+
+            fire(0.25, { spread: 26, startVelocity: 55, colors: ['#ff718d', '#fdff6a'] });
+            fire(0.2, { spread: 60, colors: ['#ff718d', '#fdff6a'] });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+            fire(0.1, { spread: 120, startVelocity: 45 });
+        }
+    </script>
+</body>
+</html>
